@@ -2,11 +2,10 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import Link from "next/link"
 
-export default function AuthErrorPage({
-    searchParams,
-}: {
-    searchParams: { error?: string }
+export default async function AuthErrorPage(props: {
+    searchParams: Promise<{ error?: string }>
 }) {
+    const searchParams = await props.searchParams
     const error = searchParams.error
 
     const errorMap: { [key: string]: string } = {
