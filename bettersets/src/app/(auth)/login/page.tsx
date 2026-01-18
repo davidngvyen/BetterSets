@@ -1,12 +1,22 @@
-"use client"
+'use client'
 
-import { useState } from "react"
-import { signIn } from "next-auth/react"
-
-import { FcGoogle } from "react-icons/fc"
-import { Loader2 } from "lucide-react"
-
-import { Button } from "@/components/ui/button"
+import { useState } from 'react'
+import { signIn } from 'next-auth/react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import * as z from 'zod'
+import { FcGoogle } from 'react-icons/fc'
+import { Loader2 } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form'
+import { Input } from '@/components/ui/input'
 import {
   Card,
   CardContent,
@@ -14,21 +24,58 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
+} from '@/components/ui/card'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
+
+const loginSchema = z.object({
+  email: z.string().email('Invalid email address'),
+  password: z.string().min(1, 'Password is required'),
+})
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
+  const router = useRouter()
+
+  const form = useForm<z.infer<typeof loginSchema>>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: '',
+      password: '',
+    },
+  })
+
+  async function onEmailSubmit(values: z.infer<typeof loginSchema>) {
+    setIsLoading(true)
+    try {
+      const result = await signIn('credentials', {
+        email: values.email,
+        password: values.password,
+        redirect: false,
+      })
+
+      if (result?.error) {
+        toast.error('Invalid email or password')
+      } else {
+        toast.success('Logged in successfully!')
+        router.push('/workouts')
+        router.refresh()
+      }
+    } catch (error) {
+      toast.error('Something went wrong.')
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   const handleGoogleLogin = async () => {
     setIsLoading(true)
     try {
-      // "google" must match the provider ID in auth.ts
-      await signIn("google", { callbackUrl: "/dashboard" })
+      await signIn('google', { callbackUrl: '/workouts' })
     } catch (error) {
-      console.error("Login failed:", error)
+      console.error('Login failed:', error)
     } finally {
-      // In a real redirect, this might not even be reached as the page unloads,
-      // but it's good practice to reset if it fails.
       setIsLoading(false)
     }
   }
@@ -37,44 +84,77 @@ export default function LoginPage() {
     <div className="flex min-h-screen w-full items-center justify-center p-4">
       <Card className="w-full max-w-[400px] border-2 shadow-2xl bg-card/95 backdrop-blur-sm animate-in fade-in zoom-in duration-500">
         <CardHeader className="text-center space-y-2">
-          <CardTitle className="text-3xl font-extrabold tracking-tight">
-            LiftLog
-          </CardTitle>
+          <CardTitle className="text-3xl font-extrabold tracking-tight">LiftLog</CardTitle>
           <CardDescription className="text-base text-muted-foreground">
-            Sign in or create an account to track your progress
+            Sign in to track your progress
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4">
-          <Button
-            variant="outline"
-            size="lg"
-            className="w-full relative h-12 text-base font-semibold border-input bg-background hover:bg-accent hover:text-accent-foreground transition-all"
-            onClick={handleGoogleLogin}
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-            ) : (
-              <FcGoogle className="mr-3 h-5 w-5" />
-            )}
-            {isLoading ? "Connecting..." : "Continue with Google"}
-          </Button>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onEmailSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input placeholder="name@example.com" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Password</FormLabel>
+                    <FormControl>
+                      <Input type="password" placeholder="******" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Sign In
+              </Button>
+            </form>
+          </Form>
 
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
               <span className="w-full border-t" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">
-                Secure Authentication
-              </span>
+              <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
             </div>
           </div>
+
+          <Button
+            variant="outline"
+            className="w-full"
+            onClick={handleGoogleLogin}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <FcGoogle className="mr-2 h-5 w-5" />
+            )}
+            Google
+          </Button>
         </CardContent>
-        <CardFooter className="flex flex-col gap-2">
-          <p className="text-xs text-center text-muted-foreground px-4">
-            By clicking continue, you agree to our Terms of Service and Privacy Policy.
-          </p>
+        <CardFooter className="flex justify-center">
+          <div className="text-sm text-muted-foreground">
+            Don't have an account?{' '}
+            <Link href="/register" className="text-primary hover:underline">
+              Sign up
+            </Link>
+          </div>
         </CardFooter>
       </Card>
     </div>

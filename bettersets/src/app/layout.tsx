@@ -31,6 +31,7 @@ export default function RootLayout({
     <html lang="en">
       <body
         className={`${pressStart2P.variable} ${geistMono.variable} antialiased`}
+        suppressHydrationWarning
       >
         {/* We might want to clear Header/Footer for dashboard routes, 
             but for now leaving them as they might be used on landing. 
