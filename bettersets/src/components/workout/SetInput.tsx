@@ -1,118 +1,140 @@
 'use client'
 
-import { UseFormReturn, useFieldArray } from "react-hook-form"
-import { Button } from "@/components/ui/button"
+import * as React from "react"
+import { Trash2, Plus } from "lucide-react"
+import { UseFormReturn, useFieldArray, Controller } from "react-hook-form"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Trash2, Plus, Copy } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
 import { cn } from "@/lib/utils"
 
-import { formSchema } from "./WorkoutForm"
-import * as z from "zod"
-
-// Needs to match the form schema in WorkoutForm
-// exercises[exerciseIndex].sets
 interface SetInputProps {
-    form: UseFormReturn<z.infer<typeof formSchema>>
+    form: UseFormReturn<any> // Using any to avoid circular dependency with schema
     exerciseIndex: number
+    className?: string
 }
 
-export default function SetInput({ form, exerciseIndex }: SetInputProps) {
+export default function SetInput({ form, exerciseIndex, className }: SetInputProps) {
     const { fields, append, remove } = useFieldArray({
         control: form.control,
-        name: `exercises.${exerciseIndex}.sets`,
+        name: `exercises.${exerciseIndex}.sets`
     })
 
-    // Helper to add a set. If there's a previous set, copy its values.
-    const addSet = () => {
-        const currentSets = form.getValues(`exercises.${exerciseIndex}.sets`)
-        const lastSet = currentSets.length > 0 ? currentSets[currentSets.length - 1] : null
-
-        append({
-            setNumber: fields.length + 1, // This will be recalculated on submit or render
-            reps: lastSet ? lastSet.reps : 0,
-            weight: lastSet ? lastSet.weight : 0,
-            rpe: lastSet ? lastSet.rpe : 8,
-            isWarmup: false,
-        })
-    }
+    const { register, control } = form
 
     return (
-        <div className="space-y-2">
-            <div className="grid grid-cols-[30px_1fr_1fr_1fr_40px] gap-2 items-center text-xs font-medium text-muted-foreground text-center mb-1">
-                <span>Set</span>
-                <span>kg/lbs</span>
-                <span>Reps</span>
-                <span>RPE</span>
-                <span></span>
+        <div className={cn("space-y-2 mt-4", className)}>
+            <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground mb-2 px-1">
+                <div className="w-8 text-center">Set</div>
+                <div className="flex-1 pl-3">Weight</div>
+                <div className="flex-1 pl-3">Reps</div>
+                <div className="w-[100px] pl-4">RPE</div>
+                <div className="w-[80px] text-center">Warmup</div>
             </div>
-
             {fields.map((field, index) => (
-                <div key={field.id} className="grid grid-cols-[30px_1fr_1fr_1fr_40px] gap-2 items-center">
-                    {/* Set Number Badge */}
-                    <div className="flex justify-center">
-                        <div className={cn(
-                            "w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold",
-                            form.watch(`exercises.${exerciseIndex}.sets.${index}.isWarmup`)
-                                ? "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400"
-                                : "bg-secondary text-secondary-foreground"
-                        )}>
-                            {index + 1}
-                        </div>
+                <div key={field.id} className="flex items-center gap-5">
+                    {/* Set Number */}
+                    <div className="flex h-10 w-8 items-center justify-center text-sm text-muted-foreground">
+                        {index + 1}
                     </div>
 
                     {/* Weight */}
-                    <div className="relative">
+                    <div className="flex-1">
                         <Input
                             type="number"
-                            placeholder="0"
-                            {...form.register(`exercises.${exerciseIndex}.sets.${index}.weight`, { valueAsNumber: true })}
-                            className="h-8 text-center p-1"
+                            placeholder="Weight"
+                            {...register(`exercises.${exerciseIndex}.sets.${index}.weight`, {
+                                valueAsNumber: true
+                            })}
+                            className="w-full"
                         />
                     </div>
 
                     {/* Reps */}
-                    <div className="relative">
+                    <div className="flex-1">
                         <Input
                             type="number"
-                            placeholder="0"
-                            {...form.register(`exercises.${exerciseIndex}.sets.${index}.reps`, { valueAsNumber: true })}
-                            className="h-8 text-center p-1"
+                            placeholder="Reps"
+                            {...register(`exercises.${exerciseIndex}.sets.${index}.reps`, {
+                                valueAsNumber: true
+                            })}
+                            className="w-full"
                         />
                     </div>
 
                     {/* RPE */}
-                    <div className="relative">
-                        <Input
-                            type="number"
-                            placeholder="8"
-                            max={10}
-                            {...form.register(`exercises.${exerciseIndex}.sets.${index}.rpe`, { valueAsNumber: true })}
-                            className="h-8 text-center p-1"
+                    <div className="w-[100px]">
+                        <Controller
+                            control={control}
+                            name={`exercises.${exerciseIndex}.sets.${index}.rpe`}
+                            render={({ field }) => (
+                                <Select
+                                    value={field.value?.toString()}
+                                    onValueChange={(val) => field.onChange(val ? parseInt(val) : undefined)}
+                                >
+                                    <SelectTrigger tabIndex={-1}>
+                                        <SelectValue placeholder="RPE" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="0">RPE -</SelectItem>
+                                        {[10, 9.5, 9, 8.5, 8, 7.5, 7, 6.5, 6, 5.5, 5].map((val) => (
+                                            <SelectItem key={val} value={val.toString()}>
+                                                {val}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            )}
                         />
                     </div>
 
-                    {/* Actions Menu or Delete */}
-                    <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                        onClick={() => remove(index)}
-                    >
-                        <Trash2 className="h-4 w-4" />
-                    </Button>
+                    {/* Warmup Checkbox */}
+                    <div className="flex items-center gap-2">
+                        <Controller
+                            control={control}
+                            name={`exercises.${exerciseIndex}.sets.${index}.isWarmup`}
+                            render={({ field }) => (
+                                <Checkbox
+                                    id={`warmup-${index}`}
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                />
+                            )}
+                        />
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => remove(index)}
+                            className="text-muted-foreground hover:text-destructive"
+                            tabIndex={-1}
+                        >
+                            <Trash2 className="h-4 w-4" />
+                        </Button>
+                    </div>
                 </div>
             ))}
 
             <Button
                 type="button"
-                variant="ghost"
+                variant="outline"
                 size="sm"
-                className="w-full mt-2 border-dashed border hover:bg-muted"
-                onClick={addSet}
+                className="w-full mt-2"
+                onClick={() => append({
+                    setNumber: fields.length + 1,
+                    reps: 0,
+                    weight: 0,
+                    rpe: 8,
+                    isWarmup: false
+                })}
             >
-                <Plus className="mr-2 h-3 w-3" />
+                <Plus className="mr-2 h-4 w-4" />
                 Add Set
             </Button>
         </div>

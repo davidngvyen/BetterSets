@@ -40,12 +40,12 @@ export default function ExercisePicker({ exercises, onSelect, children }: Exerci
             <DialogTrigger asChild>
                 {children || <Button variant="outline">Add Exercise</Button>}
             </DialogTrigger>
-            <DialogContent className="sm:max-w-screen-xl h-[80vh] flex flex-col p-0 gap-0">
-                <DialogHeader className="p-6 pb-2">
-                    <DialogTitle>Select Exercise</DialogTitle>
+            <DialogContent className="w-[95vw] min-w-0 sm:w-full sm:max-w-screen-xl max-h-[85vh] h-[80vh] flex flex-col p-0 gap-0 overflow-hidden">
+                <DialogHeader className="p-4 sm:p-6 pb-2">
+                    <DialogTitle className="truncate">Select Exercise</DialogTitle>
                 </DialogHeader>
 
-                <div className="px-6 py-2 space-y-4 border-b">
+                <div className="px-4 sm:px-6 py-2 space-y-4 border-b">
                     <div className="relative">
                         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                         <Input
@@ -77,29 +77,29 @@ export default function ExercisePicker({ exercises, onSelect, children }: Exerci
                     </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-2">
+                <div className="flex-1 overflow-y-auto p-1 sm:p-2">
                     {filteredExercises.length === 0 ? (
                         <div className="flex flex-col items-center justify-center h-40 text-muted-foreground p-4 text-center">
                             <Search className="h-8 w-8 mb-2 opacity-20" />
                             <p>No exercises found.</p>
                         </div>
                     ) : (
-                        <div className="grid gap-2">
+                        <div className="grid gap-1 sm:gap-2">
                             {filteredExercises.map(exercise => (
                                 <button
                                     key={exercise.id}
                                     onClick={() => handleSelect(exercise)}
-                                    className="flex items-center justify-between p-4 rounded-lg border hover:border-primary hover:bg-accent/50 transition-colors text-left group"
+className="w-13/20 sm:w-full max-w-full min-w-0 flex items-center justify-between p-2 sm:p-4 rounded-lg border hover:border-primary hover:bg-accent/50 transition-colors text-left group"
                                 >
-                                    <div>
-                                        <h4 className="font-semibold">{exercise.name}</h4>
-                                        <div className="text-xs text-muted-foreground flex gap-2 mt-1">
+                                    <div className="min-w-0 flex-1 mr-2 sm:mr-4">
+                                        <h4 className="font-semibold text-sm sm:text-base break-words leading-tight">{exercise.name}</h4>
+                                        <div className="text-[10px] sm:text-xs text-muted-foreground flex flex-wrap gap-1.5 mt-1">
                                             <span className="capitalize">{exercise.muscleGroup}</span>
                                             <span>•</span>
                                             <span className="capitalize">{exercise.category}</span>
                                         </div>
                                     </div>
-                                    <Check className="h-4 w-4 opacity-0 group-hover:opacity-50 text-primary" />
+                                    <Check className="h-4 w-4 opacity-0 group-hover:opacity-50 text-primary shrink-0" />
                                 </button>
                             ))}
                         </div>
