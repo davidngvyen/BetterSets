@@ -1,9 +1,8 @@
 "use client";
-
 import React from "react";
 import { TrendingUp, Trophy } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { ProgressChart } from "@/components/charts/ProgressChart";
 
 const mockRecords = [
   { exerciseId: "1", exerciseName: "Bench Press", weight: 225, date: new Date().toISOString() },
@@ -12,11 +11,11 @@ const mockRecords = [
 ];
 
 const mockHistory = [
-  { date: "Jan 1", weight: 185, volume: 5000 },
-  { date: "Jan 8", weight: 195, volume: 5500 },
-  { date: "Jan 15", weight: 205, volume: 5800 },
-  { date: "Jan 22", weight: 215, volume: 6200 },
-  { date: "Jan 29", weight: 225, volume: 6500 },
+  { date: "Jan 1", weight: 185, reps: 10, volume: 1850, isPr: false },
+  { date: "Jan 8", weight: 195, reps: 8, volume: 1560, isPr: true },
+  { date: "Jan 15", weight: 205, reps: 5, volume: 1025, isPr: true },
+  { date: "Jan 22", weight: 215, reps: 3, volume: 645, isPr: true },
+  { date: "Jan 29", weight: 225, reps: 1, volume: 225, isPr: true },
 ];
 
 export default function ProgressPage() {
@@ -65,29 +64,8 @@ export default function ProgressPage() {
           <div className="space-y-6">
             <div>
               <h4 className="mb-4 text-xs font-bold uppercase">Weight Progression</h4>
-              <div className="h-[300px] w-full border-2 border-black bg-white p-2">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={mockHistory}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                    <XAxis dataKey="date" stroke="#000" tick={{ fontFamily: 'monospace', fontSize: 10 }} />
-                    <YAxis stroke="#000" tick={{ fontFamily: 'monospace', fontSize: 10 }} />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: "#ffffff",
-                        border: "2px solid #000",
-                        fontFamily: "monospace",
-                        textTransform: "uppercase"
-                      }}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="weight"
-                      stroke="#ff6b35"
-                      strokeWidth={3}
-                      dot={{ fill: "#ff6b35", r: 5, strokeWidth: 2, stroke: "#000" }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
+              <div className="w-full border-2 border-black bg-white p-2">
+                <ProgressChart data={mockHistory} />
               </div>
             </div>
           </div>

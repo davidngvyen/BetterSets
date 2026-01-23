@@ -49,6 +49,7 @@ export default function SetInput({ form, exerciseIndex, className }: SetInputPro
                     <div className="flex-1">
                         <Input
                             type="number"
+                            step="0.01"
                             placeholder="Weight"
                             {...register(`exercises.${exerciseIndex}.sets.${index}.weight`, {
                                 valueAsNumber: true

@@ -8,7 +8,8 @@ export const setInputSchema = z.object({
     .max(1000, 'Reps must be less than 1000'),
   weight: z.number({ required_error: 'Weight is required' })
     .min(0, 'Weight cannot be negative')
-    .max(2000, 'Weight exceeds maximum limit (2000)'),
+    .max(2000, 'Weight exceeds maximum limit (2000)')
+    .multipleOf(0.01, 'Weight can only have up to 2 decimal places'),
   isWarmup: z.boolean().default(false),
   rpe: z.number()
     .int()

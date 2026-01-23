@@ -5,22 +5,16 @@ import { Dumbbell, TrendingUp, Flame, Zap, Target, Award, Star, Heart, Trophy, S
 import { useApp } from "@/components/providers/AppProvider";
 // import { toast } from "sonner"; // Use if configured
 import { CharacterAvatar, CharacterCustomization } from "@/components/CharacterAvatar";
+import WorkoutCard from "@/components/workout/WorkoutCard"; // IMPORTED FOR YOU
+import { WorkoutWithExercises } from "@/types/workout"; // IMPORTED FOR YOU
 
 interface Stats {
   workoutCount: number;
   totalVolume: number;
   currentStreak: number;
   weeklyWorkouts: number;
-  recentWorkouts: {
-    id: string;
-    name: string;
-    exercises: unknown[];
-    duration: number;
-    totalVolume: number;
-    endTime: string;
-    createdAt?: string; // Add optional createdAt
-    isCompleted: boolean;
-  }[];
+  // TODO: Update this type to match your API response structure if needed
+  recentWorkouts: WorkoutWithExercises[];
 }
 
 export default function DashboardPage() {
@@ -35,43 +29,96 @@ export default function DashboardPage() {
   const xpToNextLevel = 5 - (workoutCount % 5);
 
   useEffect(() => {
-    // Mock data loading for now
-    // In a real implementation, fetch from /api/stats
-    setTimeout(() => {
-      setStats({
-        workoutCount: user?.workoutCount || 12,
-        totalVolume: user?.totalVolume || 45000,
-        currentStreak: user?.currentStreak || 3,
-        weeklyWorkouts: 4,
-        recentWorkouts: [
-          {
-            id: "1",
-            name: "Upper Body Power",
-            exercises: [{}, {}, {}, {}],
-            duration: 3600000, // 60 mins
-            totalVolume: 12500,
-            endTime: new Date().toISOString(),
-            isCompleted: true
-          },
-          {
-            id: "2",
-            name: "Leg Day Destruction",
-            exercises: [{}, {}, {}, {}, {}],
-            duration: 4500000, // 75 mins
-            totalVolume: 18000,
-            endTime: new Date(Date.now() - 86400000).toISOString(), // Yesterday
-            isCompleted: true
+    async function fetchDashboardData() {
+      try {
+        let workouts: WorkoutWithExercises[] = [];
+        try {
+          // STEP 1: Fetch data from the API
+          const response = await fetch('/api/workouts');
+          if (!response.ok) {
+            // If 401 or other error, throw to trigger catch and use mock data
+            throw new Error("Failed to fetch");
           }
-        ],
-      });
-      setLoading(false);
-    }, 1000);
-  }, [user]);
+          workouts = await response.json();
+        } catch (error) {
+          console.warn("Failed to fetch real data, using mock data for guest", error);
+          // Fallback MOCK DATA for Guest/Demo
+          workouts = [
+            {
+              id: '1', date: new Date().toISOString(), name: 'Morning Pump', userId: 'guest',
+              createdAt: new Date(), updatedAt: new Date(),
+              exercises: [
+                {
+                  id: 'e1', exerciseId: 'ex1', workoutId: '1', order: 1,
+                  exercise: { id: 'ex1', name: 'Bench Press', category: 'Chest', equipment: 'Barbell', userId: 'guest', description: null, videoUrl: null, muscleGroup: 'Chest', secondaryMuscles: [], createdAt: new Date(), updatedAt: new Date() },
+                  sets: [
+                    { id: 's1', workoutExerciseId: 'e1', setNumber: 1, weight: 135, reps: 10, isWarmup: true, rpe: 7, createdAt: new Date() },
+                    { id: 's2', workoutExerciseId: 'e1', setNumber: 2, weight: 185, reps: 5, isWarmup: false, rpe: 9, createdAt: new Date() }
+                  ]
+                }
+              ]
+            },
+            {
+              id: '2', date: new Date(Date.now() - 86400000).toISOString(), name: 'Leg Day', userId: 'guest',
+              createdAt: new Date(Date.now() - 86400000), updatedAt: new Date(Date.now() - 86400000),
+              exercises: []
+            }
+          ] as unknown as WorkoutWithExercises[]; // Cast to satisfy type if needed, though structure matches
+        }
 
-  const formatDuration = (ms: number) => {
-    const minutes = Math.floor(ms / 60000);
-    return `${minutes}min`;
-  };
+        // STEP 2: Calculate Statistics
+        const workoutCount = workouts.length;
+
+        const totalVolume = workouts.reduce((total, workout) => {
+          return total + workout.exercises.reduce((workoutTotal, exercise) => {
+            return workoutTotal + exercise.sets.reduce((setTotal, set) => {
+              return setTotal + (set.weight * set.reps);
+            }, 0);
+          }, 0);
+        }, 0);
+
+        const now = new Date();
+        const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        const weeklyWorkouts = workouts.filter(w => new Date(w.date) > oneWeekAgo).length;
+
+        // Simple streak calculation
+        const uniqueDates = new Set(workouts.map(w => new Date(w.date).toISOString().split('T')[0]));
+        let streak = 0;
+        const checkDate = new Date();
+
+        // Check if we worked out today
+        if (uniqueDates.has(checkDate.toISOString().split('T')[0])) {
+          streak++;
+        }
+
+        // Check yesterday and backwards
+        while (true) {
+          checkDate.setDate(checkDate.getDate() - 1);
+          if (uniqueDates.has(checkDate.toISOString().split('T')[0])) {
+            streak++;
+          } else {
+            break;
+          }
+        }
+
+        // STEP 3: Update State
+        setStats({
+          workoutCount,
+          totalVolume,
+          currentStreak: streak,
+          weeklyWorkouts,
+          recentWorkouts: workouts.slice(0, 5)
+        })
+
+      } catch (error) {
+        console.error("Failed to fetch dashboard data", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchDashboardData();
+  }, [user]);
 
   const formatVolume = (volume: number) => {
     if (volume >= 1000) {
@@ -205,7 +252,7 @@ export default function DashboardPage() {
       {/* Quest Log */}
       <div className="border-4 border-black bg-white p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
         <h2 className="mb-4 text-base uppercase leading-relaxed">📜 QUEST LOG</h2>
-        {stats?.recentWorkouts.length === 0 ? (
+        {stats?.recentWorkouts?.length === 0 ? (
           <div className="py-16 text-center">
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center border-4 border-black bg-gray-300">
               <Dumbbell className="h-8 w-8 text-gray-600" />
@@ -217,30 +264,8 @@ export default function DashboardPage() {
           </div>
         ) : (
           <div className="space-y-3">
-            {stats?.recentWorkouts.map((workout) => (
-              <div
-                key={workout.id}
-                className="group flex items-center gap-4 border-4 border-black bg-gradient-to-r from-emerald-100 to-green-100 p-4 transition-all hover:translate-x-1 hover:translate-y-1"
-              >
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center border-4 border-black bg-gradient-to-br from-yellow-300 to-yellow-500">
-                  <Trophy className="h-7 w-7 text-black" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <h4 className="text-sm uppercase leading-relaxed truncate">QUEST: {workout.name}</h4>
-                    <span className="border-2 border-black bg-green-400 px-2 py-0.5 text-xs uppercase">✓ COMPLETE</span>
-                  </div>
-                  <p className="text-xs leading-relaxed text-muted-foreground">
-                    {workout.exercises.length} BATTLES • {formatDuration(workout.duration)} • +1 XP
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm font-normal leading-relaxed text-green-600">💰 {formatVolume(workout.totalVolume)} LBS</p>
-                  <p className="text-xs leading-relaxed text-muted-foreground">
-                    {new Date(workout.endTime || workout.createdAt || "").toLocaleDateString()}
-                  </p>
-                </div>
-              </div>
+            {stats?.recentWorkouts?.map(workout => (
+              <WorkoutCard key={workout.id} workout={workout} />
             ))}
           </div>
         )}

@@ -20,7 +20,7 @@ import { WorkoutWithExercises } from "@/types/workout"
 const setSchema = z.object({
     setNumber: z.number(),
     reps: z.number().min(0, "Reps must be positive"),
-    weight: z.number().min(0, "Weight must be positive"),
+    weight: z.number().min(0, "Weight must be positive").multipleOf(0.01, "Weight can only have up to 2 decimal places"),
     rpe: z.number().optional(),
     isWarmup: z.boolean(),
 })

@@ -1,63 +1,98 @@
-'use client'
-
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { WorkoutWithExercises } from '@/types/workout'
-import { CalendarDays, Clock, Dumbbell, ChevronRight } from 'lucide-react'
-import Link from 'next/link'
-import { format } from 'date-fns'
+import React from "react"
+import { Trophy } from "lucide-react"
+import { WorkoutWithExercises } from "@/types/workout"
+import { cn } from "@/lib/utils"
 
 interface WorkoutCardProps {
   workout: WorkoutWithExercises
 }
 
 export default function WorkoutCard({ workout }: WorkoutCardProps) {
-  const exerciseCount = workout.exercises.length
-  const totalSets = workout.exercises.reduce((acc, ex) => acc + ex.sets.length, 0)
+  // -------------------------------------------------------------------------
+  // HELPER FUNCTIONS
+  // -------------------------------------------------------------------------
+
+  // 1. Calculate Duration
+  const duration = React.useMemo(() => {
+    if (!workout.startTime || !workout.endTime) return "N/A";
+
+    const start = new Date(workout.startTime).getTime();
+    const end = new Date(workout.endTime).getTime();
+    const diff = end - start;
+    const minutes = Math.floor(diff / 60000);
+
+    return `${minutes}min`;
+  }, [workout.startTime, workout.endTime]);
+
+  // 2. Calculate Total Volume
+  const totalVolume = React.useMemo(() => {
+    let volume = 0;
+
+    workout.exercises.forEach(exercise => {
+      exercise.sets.forEach(set => {
+        volume += (set.weight * set.reps);
+      });
+    });
+
+    if (volume >= 1000) {
+      return `${(volume / 1000).toFixed(1)}K`; // Keep K format simpler
+    }
+
+    // Check if it's an integer
+    if (Number.isInteger(volume)) {
+      return `${volume}`;
+    }
+
+    return `${volume.toFixed(2)}`;
+  }, [workout.exercises]);
+
+  // -------------------------------------------------------------------------
+  // RENDER LOGIC
+  // -------------------------------------------------------------------------
 
   return (
-    <Link href={`/workouts/${workout.id}`} className="block transition-transform hover:-translate-y-1">
-      <Card className="h-full hover:border-primary/50 transition-colors">
-        <CardHeader className="pb-3">
-          <div className="flex justify-between items-start gap-2">
-            <CardTitle className="text-xl line-clamp-1">{workout.name}</CardTitle>
-            <Badge variant={workout.isCompleted ? 'default' : 'secondary'}>
-              {workout.isCompleted ? 'Completed' : 'Planned'}
-            </Badge>
-          </div>
-          <CardDescription className="flex items-center gap-1">
-            <CalendarDays className="h-3.5 w-3.5" />
-            {format(new Date(workout.date), 'MMM d, yyyy')}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="pb-3">
-          {workout.notes && (
-            <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
-              {workout.notes}
-            </p>
-          )}
+    <div
+      className="group flex items-center gap-4 border-4 border-black bg-gradient-to-r from-emerald-100 to-green-100 p-4 transition-all hover:translate-x-1 hover:translate-y-1"
+    >
+      {/* ICON SECTION */}
+      <div className="flex h-14 w-14 shrink-0 items-center justify-center border-4 border-black bg-gradient-to-br from-yellow-300 to-yellow-500">
+        <Trophy className="h-7 w-7 text-black" />
+      </div>
 
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Dumbbell className="h-4 w-4 text-primary" />
-              <span>{exerciseCount} Exercises</span>
-            </div>
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <span className="font-medium text-foreground">{totalSets}</span> Sets
-            </div>
-            {workout.durationMins && (
-              <div className="flex items-center gap-2 text-muted-foreground col-span-2">
-                <Clock className="h-4 w-4 text-primary" />
-                <span>{workout.durationMins} minutes</span>
-              </div>
-            )}
-          </div>
-        </CardContent>
-        <CardFooter className="pt-0 text-xs text-muted-foreground flex justify-between items-center">
-          <span>View Details</span>
-          <ChevronRight className="h-4 w-4" />
-        </CardFooter>
-      </Card>
-    </Link>
+      {/* CONTENT SECTION */}
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          {/* 1. Render Name */}
+          <h3 className="text-sm font-bold uppercase leading-relaxed truncate">
+            QUEST: {workout.name}
+          </h3>
+
+          {/* 2. Render Completion Badge */}
+          {workout.endTime && (
+            <span className="border-2 border-black bg-green-400 px-2 py-0.5 text-xs uppercase">
+              ✓ COMPLETE
+            </span>
+          )}
+        </div>
+
+        {/* 3. Render Details Line */}
+        <p className="text-xs leading-relaxed text-muted-foreground">
+          {workout.exercises.length} BATTLES • {duration} • +1 XP
+        </p>
+      </div>
+
+      {/* STATS SECTION (Right side) */}
+      <div className="text-right">
+        {/* 1. Render Volume */}
+        <p className="text-sm font-normal leading-relaxed text-green-600">
+          💰 {totalVolume} LBS
+        </p>
+
+        {/* 2. Render Date */}
+        <p className="text-xs leading-relaxed text-muted-foreground">
+          {new Date(workout.date || new Date()).toLocaleDateString()}
+        </p>
+      </div>
+    </div>
   )
 }

@@ -2,14 +2,23 @@ import { Sidebar } from "@/components/layout/Sidebar";
 import { Header } from "@/components/layout/Header";
 import { PixelClouds } from "@/components/PixelClouds";
 import { AppProvider } from "@/components/providers/AppProvider";
+import { auth } from "@/lib/auth";
 
-export default function DashboardLayout({
+export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  // Transform session user to AppUser format if needed
-  const appUser = {
+  const session = await auth();
+
+  // Transform session user to AppUser format
+  const appUser = session?.user ? {
+    id: session.user.id || "unknown",
+    name: session.user.name || "Warrior",
+    email: session.user.email || "",
+    image: session.user.image,
+  } : {
+    // Fallback for non-authenticated state (restricted mode)
     id: "guest-user",
     name: "Guest Warrior",
     email: "guest@example.com",
